@@ -1,15 +1,32 @@
-# Lead Magnet Frontend
+# Lead Magnet Command Center
 
-Lightweight mobile-first frontend for a Qazi lead magnet opt-in page.
+Internal dashboard UI for monitoring Qazi lead magnet performance.
 
-## What it includes
+This repo is **not** a customer-facing opt-in page. It is the visual dashboard shell for Waqas/Lucius to review how lead magnets are performing.
 
-- Hero/value-prop section
-- Email capture form UI
-- Goal dropdown for lightweight segmentation
-- Client-side success state
-- Mobile-first responsive styling
-- Optional download URL via `VITE_LEAD_MAGNET_URL`
+## Current dashboard sections
+
+- Key metric cards
+  - visitors
+  - opt-ins
+  - blended conversion rate
+  - revenue influenced
+- Funnel health
+- Source breakdown
+- Lead magnet inventory table
+- Needs-attention panel
+- Backend/integration notes
+
+## Data status
+
+Current data is seeded placeholder data for layout review only.
+
+The intended next step is to connect this frontend to a backend/API pulling from the approved sources of truth, such as:
+
+- Kit / ConvertKit for subscribers, forms, tags, and sequences
+- QZD/go links for route/source/campaign attribution
+- Hyros for downstream sales/revenue influence
+- Cloudflare Worker/API for normalized dashboard endpoints
 
 ## Local setup
 
@@ -18,24 +35,10 @@ npm install
 npm run dev
 ```
 
-Vite will print a local URL, usually:
+Local URL is usually:
 
 ```bash
 http://127.0.0.1:5173/
-```
-
-## Configure the download button
-
-Copy the example env file:
-
-```bash
-cp .env.example .env
-```
-
-Then set:
-
-```bash
-VITE_LEAD_MAGNET_URL=https://your-real-download-or-confirmation-url
 ```
 
 ## Build
@@ -44,36 +47,38 @@ VITE_LEAD_MAGNET_URL=https://your-real-download-or-confirmation-url
 npm run build
 ```
 
-The static production output is generated in `dist/`.
-
-## Deploy notes
-
-This is a static Vite app, so it can deploy cleanly to:
-
-- Cloudflare Pages
-- Netlify
-- Vercel
-- Any static host serving `dist/`
-
-Build command:
-
-```bash
-npm run build
-```
-
-Output directory:
+Production output:
 
 ```bash
 dist
 ```
 
-## Integration note
+## GitHub Pages deploy
 
-The current first version stores the submitted lead locally to power the success state. Replace the placeholder in `src/main.ts` with the approved production integration when ready:
+This repo deploys through `.github/workflows/deploy-pages.yml`.
 
-- Kit / ConvertKit endpoint
-- Tally form embed/API
-- Cloudflare Worker/serverless endpoint
-- Zapier webhook, if approved
+Live preview:
+
+```txt
+https://colorpod.github.io/lead-magnet-frontend/
+```
+
+## Backend contract target
+
+A future backend should expose a normalized JSON shape like:
+
+```json
+{
+  "window": "last_30_days",
+  "totals": {
+    "visitors": 42432,
+    "optIns": 6209,
+    "conversionRate": 14.63,
+    "revenueInfluenced": 48160
+  },
+  "magnets": [],
+  "sources": []
+}
+```
 
 Do not put private API keys in this frontend repo.

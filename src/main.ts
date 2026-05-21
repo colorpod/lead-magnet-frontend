@@ -1,175 +1,286 @@
 import './styles.css';
 
-type Lead = {
-  email: string;
-  firstName?: string;
-  goal?: string;
-  createdAt: string;
+type MagnetMetric = {
+  id: string;
+  name: string;
+  product: string;
+  status: 'Live' | 'Needs attention' | 'Testing';
+  visitors: number;
+  optIns: number;
+  conversionRate: number;
+  newLeads: number;
+  revenue: number;
+  topSource: string;
+  trend: number;
 };
 
-const STORAGE_KEY = 'qazi-lead-magnet-signup';
+type SourceMetric = {
+  source: string;
+  visitors: number;
+  optIns: number;
+  conversionRate: number;
+};
 
-const benefits = [
-  'The exact shot-check order Qazi uses before touching a grade',
-  'A practical node-tree starter map for faster Resolve decisions',
-  'Common beginner mistakes that make grades look muddy or amateur',
+const magnets: MagnetMetric[] = [
+  {
+    id: 'resolve-starter-kit',
+    name: 'Resolve Starter Kit',
+    product: 'RapidGrade',
+    status: 'Live',
+    visitors: 18420,
+    optIns: 3194,
+    conversionRate: 17.34,
+    newLeads: 612,
+    revenue: 24890,
+    topSource: 'YouTube',
+    trend: 8.7,
+  },
+  {
+    id: 'color-checklist',
+    name: 'Color Grade Checklist',
+    product: 'Qazi Toolkit',
+    status: 'Live',
+    visitors: 12980,
+    optIns: 1821,
+    conversionRate: 14.03,
+    newLeads: 344,
+    revenue: 11240,
+    topSource: 'Instagram',
+    trend: 3.1,
+  },
+  {
+    id: 'qazverse-preview',
+    name: 'QazVerse Preview Pack',
+    product: 'QazVerse',
+    status: 'Testing',
+    visitors: 6744,
+    optIns: 805,
+    conversionRate: 11.94,
+    newLeads: 129,
+    revenue: 8890,
+    topSource: 'Email',
+    trend: -2.4,
+  },
+  {
+    id: 'client-grade-map',
+    name: 'Client Grade Map',
+    product: 'Freelance Colorist',
+    status: 'Needs attention',
+    visitors: 4288,
+    optIns: 389,
+    conversionRate: 9.07,
+    newLeads: 78,
+    revenue: 3140,
+    topSource: 'QDM',
+    trend: -6.8,
+  },
 ];
 
+const sources: SourceMetric[] = [
+  { source: 'YouTube', visitors: 15880, optIns: 2710, conversionRate: 17.07 },
+  { source: 'Instagram / QDM', visitors: 11240, optIns: 1672, conversionRate: 14.88 },
+  { source: 'Email', visitors: 7524, optIns: 928, conversionRate: 12.33 },
+  { source: 'Organic / SEO', visitors: 5420, optIns: 613, conversionRate: 11.31 },
+  { source: 'Affiliate / Partners', visitors: 2368, optIns: 286, conversionRate: 12.08 },
+];
+
+const totals = magnets.reduce(
+  (acc, item) => {
+    acc.visitors += item.visitors;
+    acc.optIns += item.optIns;
+    acc.newLeads += item.newLeads;
+    acc.revenue += item.revenue;
+    return acc;
+  },
+  { visitors: 0, optIns: 0, newLeads: 0, revenue: 0 },
+);
+
+const blendedConversion = (totals.optIns / totals.visitors) * 100;
+const bestMagnet = [...magnets].sort((a, b) => b.conversionRate - a.conversionRate)[0];
+const needsAttention = magnets.filter((item) => item.status === 'Needs attention');
+
 const app = document.querySelector<HTMLDivElement>('#app');
+if (!app) throw new Error('Missing #app root');
 
-if (!app) {
-  throw new Error('Missing #app root');
-}
+app.innerHTML = `
+  <main class="dashboard-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Qazi Lead Magnet Command Center</p>
+        <h1>Performance dashboard for lead magnets.</h1>
+        <p class="lede">Internal view for tracking opt-ins, conversion rate, source quality, and revenue impact across active lead magnets.</p>
+      </div>
+      <div class="date-card" aria-label="Reporting window">
+        <span>Reporting window</span>
+        <strong>Last 30 days</strong>
+        <small>Mock data until live backend is connected</small>
+      </div>
+    </header>
 
-const appRoot = app;
+    <section class="metric-grid" aria-label="Key metrics">
+      ${metricCard('Total visitors', formatNumber(totals.visitors), '+5.8%', 'Traffic into lead magnet pages')}
+      ${metricCard('Opt-ins', formatNumber(totals.optIns), '+7.2%', 'New email captures')}
+      ${metricCard('Blended CVR', `${blendedConversion.toFixed(1)}%`, '+1.4%', 'Visitor → opt-in conversion')}
+      ${metricCard('Revenue influenced', formatCurrency(totals.revenue), '+9.6%', 'Downstream sales attribution')}
+    </section>
 
-function savedLead(): Lead | null {
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as Lead;
-  } catch {
-    window.localStorage.removeItem(STORAGE_KEY);
-    return null;
-  }
-}
-
-function leadMagnetUrl(): string {
-  return import.meta.env.VITE_LEAD_MAGNET_URL || '#';
-}
-
-function renderSuccess(lead: Lead) {
-  appRoot.innerHTML = `
-    <section class="page-shell success-shell">
-      <div class="success-card">
-        <p class="eyebrow">You’re in</p>
-        <h1>Check your inbox${lead.firstName ? `, ${escapeHtml(lead.firstName)}` : ''}.</h1>
-        <p class="lede">The free color grading blueprint is queued up for <strong>${escapeHtml(lead.email)}</strong>.</p>
-        <div class="next-box">
-          <span class="next-label">Next step</span>
-          <p>Open it, watch the first section, then use the checklist on your next grade.</p>
+    <section class="two-column">
+      <article class="panel large-panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow small">Funnel health</p>
+            <h2>Visitor → opt-in performance</h2>
+          </div>
+          <span class="status-pill good">${bestMagnet.name} winning</span>
         </div>
-        <div class="actions">
-          <a class="primary-btn" href="${leadMagnetUrl()}" ${leadMagnetUrl() === '#' ? 'aria-disabled="true"' : ''}>Open the blueprint</a>
-          <button class="ghost-btn" data-reset>Use another email</button>
+        <div class="funnel">
+          ${funnelStep('Visitors', totals.visitors, 100)}
+          ${funnelStep('Opt-ins', totals.optIns, blendedConversion)}
+          ${funnelStep('New leads this week', totals.newLeads, (totals.newLeads / totals.optIns) * 100)}
         </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header compact">
+          <div>
+            <p class="eyebrow small">Priority</p>
+            <h2>Needs attention</h2>
+          </div>
+        </div>
+        <div class="attention-list">
+          ${needsAttention
+            .map(
+              (item) => `
+                <div class="attention-item">
+                  <strong>${item.name}</strong>
+                  <span>${item.conversionRate.toFixed(1)}% CVR · ${item.trend.toFixed(1)}% trend</span>
+                  <p>Check source-message match, CTA clarity, and thank-you page routing.</p>
+                </div>
+              `,
+            )
+            .join('') || '<p class="muted">No lead magnets need attention.</p>'}
+        </div>
+      </article>
+    </section>
+
+    <section class="two-column source-row">
+      <article class="panel">
+        <div class="panel-header compact">
+          <div>
+            <p class="eyebrow small">Source breakdown</p>
+            <h2>Where leads are coming from</h2>
+          </div>
+        </div>
+        <div class="source-list">
+          ${sources.map(sourceRow).join('')}
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header compact">
+          <div>
+            <p class="eyebrow small">Operator notes</p>
+            <h2>What this repo is for</h2>
+          </div>
+        </div>
+        <ul class="notes-list">
+          <li>Dashboard UI for internal lead magnet performance.</li>
+          <li>Designed to plug into Kit, QZD/go links, Hyros, or a backend API.</li>
+          <li>No customer-facing opt-in flow in this repo.</li>
+          <li>Current numbers are seeded placeholders for layout review only.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="panel table-panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow small">Lead magnet inventory</p>
+          <h2>Campaign performance table</h2>
+        </div>
+        <button class="ghost-btn" type="button">Export CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Lead magnet</th>
+              <th>Product</th>
+              <th>Status</th>
+              <th>Visitors</th>
+              <th>Opt-ins</th>
+              <th>CVR</th>
+              <th>Top source</th>
+              <th>Revenue</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${magnets.map(tableRow).join('')}
+          </tbody>
+        </table>
       </div>
     </section>
-  `;
+  </main>
+`;
 
-  appRoot.querySelector<HTMLButtonElement>('[data-reset]')?.addEventListener('click', () => {
-    window.localStorage.removeItem(STORAGE_KEY);
-    renderOptIn();
-  });
+function metricCard(label: string, value: string, trend: string, subcopy: string) {
+  return `
+    <article class="metric-card">
+      <span>${label}</span>
+      <strong>${value}</strong>
+      <div><b>${trend}</b> ${subcopy}</div>
+    </article>
+  `;
 }
 
-function renderOptIn() {
-  appRoot.innerHTML = `
-    <section class="page-shell">
-      <div class="hero-grid">
-        <section class="hero-copy" aria-labelledby="page-title">
-          <p class="eyebrow">Free Resolve training download</p>
-          <h1 id="page-title">Get the Color Grading Blueprint before your next grade.</h1>
-          <p class="lede">A clean, practical guide for building better-looking grades without guessing, overcorrecting, or stacking random nodes.</p>
-          <div class="proof-row" aria-label="Included in the download">
-            <span>PDF checklist</span>
-            <span>Resolve workflow</span>
-            <span>Beginner-safe</span>
-          </div>
-          <ul class="benefit-list">
-            ${benefits.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
-          </ul>
-        </section>
-
-        <aside class="form-card" aria-label="Download form">
-          <div class="card-header">
-            <span class="badge">Instant access</span>
-            <h2>Send me the blueprint</h2>
-            <p>No fluff. Just a focused starting point for cleaner grades.</p>
-          </div>
-
-          <form id="lead-form" novalidate>
-            <label>
-              First name <span>optional</span>
-              <input name="firstName" autocomplete="given-name" placeholder="Waqas" />
-            </label>
-            <label>
-              Email address
-              <input name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
-            </label>
-            <label>
-              What are you trying to improve?
-              <select name="goal">
-                <option value="Better skin tones">Better skin tones</option>
-                <option value="Cleaner contrast">Cleaner contrast</option>
-                <option value="Resolve workflow">Resolve workflow</option>
-                <option value="Client-ready grades">Client-ready grades</option>
-              </select>
-            </label>
-            <p class="error" role="alert" hidden></p>
-            <button class="primary-btn full" type="submit">Get the free blueprint</button>
-          </form>
-          <p class="privacy">We’ll only use this to send the download and relevant color grading training.</p>
-        </aside>
+function funnelStep(label: string, value: number, percent: number) {
+  return `
+    <div class="funnel-step">
+      <div class="funnel-copy">
+        <span>${label}</span>
+        <strong>${formatNumber(value)}</strong>
       </div>
-    </section>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(5, Math.min(100, percent))}%"></div></div>
+      <em>${percent.toFixed(1)}%</em>
+    </div>
   `;
-
-  const form = appRoot.querySelector<HTMLFormElement>('#lead-form');
-  const error = appRoot.querySelector<HTMLParagraphElement>('.error');
-
-  form?.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const data = new FormData(form);
-    const email = String(data.get('email') || '').trim().toLowerCase();
-    const firstName = String(data.get('firstName') || '').trim();
-    const goal = String(data.get('goal') || '').trim();
-
-    if (!isValidEmail(email)) {
-      showError(error, 'Drop in a real email so we know where to send it.');
-      return;
-    }
-
-    const lead: Lead = {
-      email,
-      firstName: firstName || undefined,
-      goal: goal || undefined,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Placeholder persistence for first version. Swap this for Kit/ConvertKit,
-    // Tally, or a serverless endpoint when the integration is approved.
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lead));
-    renderSuccess(lead);
-  });
 }
 
-function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+function sourceRow(item: SourceMetric) {
+  return `
+    <div class="source-item">
+      <div>
+        <strong>${item.source}</strong>
+        <span>${formatNumber(item.visitors)} visitors · ${formatNumber(item.optIns)} opt-ins</span>
+      </div>
+      <b>${item.conversionRate.toFixed(1)}%</b>
+    </div>
+  `;
 }
 
-function showError(node: HTMLParagraphElement | null, message: string) {
-  if (!node) return;
-  node.textContent = message;
-  node.hidden = false;
+function tableRow(item: MagnetMetric) {
+  const statusClass = item.status === 'Live' ? 'good' : item.status === 'Testing' ? 'testing' : 'warning';
+  const trendClass = item.trend >= 0 ? 'up' : 'down';
+  return `
+    <tr>
+      <td><strong>${item.name}</strong><span>${item.id}</span></td>
+      <td>${item.product}</td>
+      <td><span class="status-pill ${statusClass}">${item.status}</span></td>
+      <td>${formatNumber(item.visitors)}</td>
+      <td>${formatNumber(item.optIns)}</td>
+      <td>${item.conversionRate.toFixed(1)}%</td>
+      <td>${item.topSource}</td>
+      <td>${formatCurrency(item.revenue)}</td>
+      <td class="trend ${trendClass}">${item.trend >= 0 ? '+' : ''}${item.trend.toFixed(1)}%</td>
+    </tr>
+  `;
 }
 
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>'"]/g, (char) => {
-    const entities: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      "'": '&#039;',
-      '"': '&quot;',
-    };
-    return entities[char] || char;
-  });
+function formatNumber(value: number) {
+  return new Intl.NumberFormat('en-US').format(value);
 }
 
-const existing = savedLead();
-if (existing) {
-  renderSuccess(existing);
-} else {
-  renderOptIn();
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 }
