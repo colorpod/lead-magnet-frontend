@@ -1,44 +1,49 @@
-# Lead Magnet Command Center
+# Lead Magnet Monitor
 
-Internal dashboard UI for monitoring Qazi lead magnet performance.
+Internal starter dashboard for keeping tabs on the new Qazi lead magnet system.
 
-This repo is **not** a customer-facing opt-in page. It is the visual dashboard shell for Waqas/Lucius to review how lead magnets are performing.
+This repo is **not** a customer-facing opt-in page and it should not show fake performance numbers. It is the visual shell for the internal monitoring dashboard.
 
-## Current dashboard sections
+## Current state
 
-- Key metric cards
-  - visitors
-  - opt-ins
-  - blended conversion rate
-  - revenue influenced
-- Funnel health
-- Source breakdown
-- Lead magnet inventory table
-- Needs-attention panel
-- Backend/integration notes
+- Clean dashboard shell
+- No mock metric numbers
+- Empty states for unconnected data
+- Setup checklist for the real tracking sources
+- Inventory shell for lead magnets
+- Backend event contract notes
 
-## Data status
+## Intended real data sources
 
-Current data is seeded placeholder data for layout review only.
+Connect only after the new lead magnet system is defined:
 
-The intended next step is to connect this frontend to a backend/API pulling from the approved sources of truth, such as:
+- Lead magnet inventory: product/offer/funnel registry
+- Traffic/source events: QZD/go links or router analytics
+- Opt-ins: Kit / ConvertKit forms, tags, or webhook events
+- Revenue impact: Hyros / checkout attribution
 
-- Kit / ConvertKit for subscribers, forms, tags, and sequences
-- QZD/go links for route/source/campaign attribution
-- Hyros for downstream sales/revenue influence
-- Cloudflare Worker/API for normalized dashboard endpoints
+## Minimum event contract
+
+Future backend/API should normalize events like:
+
+```json
+{
+  "event": "opt_in",
+  "leadMagnetId": "resolve-starter-kit",
+  "emailHash": "sha256-redacted",
+  "source": "youtube",
+  "campaign": "lead-magnet-launch",
+  "createdAt": "2026-05-21T00:00:00Z"
+}
+```
+
+No private customer data or API keys should live in this frontend repo.
 
 ## Local setup
 
 ```bash
 npm install
 npm run dev
-```
-
-Local URL is usually:
-
-```bash
-http://127.0.0.1:5173/
 ```
 
 ## Build
@@ -53,32 +58,8 @@ Production output:
 dist
 ```
 
-## GitHub Pages deploy
-
-This repo deploys through `.github/workflows/deploy-pages.yml`.
-
-Live preview:
+## Live preview
 
 ```txt
 https://colorpod.github.io/lead-magnet-frontend/
 ```
-
-## Backend contract target
-
-A future backend should expose a normalized JSON shape like:
-
-```json
-{
-  "window": "last_30_days",
-  "totals": {
-    "visitors": 42432,
-    "optIns": 6209,
-    "conversionRate": 14.63,
-    "revenueInfluenced": 48160
-  },
-  "magnets": [],
-  "sources": []
-}
-```
-
-Do not put private API keys in this frontend repo.

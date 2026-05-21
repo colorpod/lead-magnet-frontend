@@ -1,286 +1,162 @@
 import './styles.css';
 
-type MagnetMetric = {
-  id: string;
-  name: string;
-  product: string;
-  status: 'Live' | 'Needs attention' | 'Testing';
-  visitors: number;
-  optIns: number;
-  conversionRate: number;
-  newLeads: number;
-  revenue: number;
-  topSource: string;
-  trend: number;
+type SetupItem = {
+  label: string;
+  status: 'Ready' | 'Needs source' | 'Next';
+  description: string;
 };
 
-type SourceMetric = {
-  source: string;
-  visitors: number;
-  optIns: number;
-  conversionRate: number;
-};
-
-const magnets: MagnetMetric[] = [
+const setupItems: SetupItem[] = [
   {
-    id: 'resolve-starter-kit',
-    name: 'Resolve Starter Kit',
-    product: 'RapidGrade',
-    status: 'Live',
-    visitors: 18420,
-    optIns: 3194,
-    conversionRate: 17.34,
-    newLeads: 612,
-    revenue: 24890,
-    topSource: 'YouTube',
-    trend: 8.7,
+    label: 'Lead magnet inventory',
+    status: 'Next',
+    description: 'Add each new lead magnet, owner, funnel URL, thank-you URL, and offer path.',
   },
   {
-    id: 'color-checklist',
-    name: 'Color Grade Checklist',
-    product: 'Qazi Toolkit',
-    status: 'Live',
-    visitors: 12980,
-    optIns: 1821,
-    conversionRate: 14.03,
-    newLeads: 344,
-    revenue: 11240,
-    topSource: 'Instagram',
-    trend: 3.1,
+    label: 'Traffic tracking',
+    status: 'Needs source',
+    description: 'Connect page views and source/UTM data from the link/router layer.',
   },
   {
-    id: 'qazverse-preview',
-    name: 'QazVerse Preview Pack',
-    product: 'QazVerse',
-    status: 'Testing',
-    visitors: 6744,
-    optIns: 805,
-    conversionRate: 11.94,
-    newLeads: 129,
-    revenue: 8890,
-    topSource: 'Email',
-    trend: -2.4,
+    label: 'Opt-in tracking',
+    status: 'Needs source',
+    description: 'Connect Kit/ConvertKit forms, tags, or events for confirmed email captures.',
   },
   {
-    id: 'client-grade-map',
-    name: 'Client Grade Map',
-    product: 'Freelance Colorist',
-    status: 'Needs attention',
-    visitors: 4288,
-    optIns: 389,
-    conversionRate: 9.07,
-    newLeads: 78,
-    revenue: 3140,
-    topSource: 'QDM',
-    trend: -6.8,
+    label: 'Revenue attribution',
+    status: 'Needs source',
+    description: 'Connect Hyros or checkout attribution after the lead enters a sales path.',
   },
 ];
-
-const sources: SourceMetric[] = [
-  { source: 'YouTube', visitors: 15880, optIns: 2710, conversionRate: 17.07 },
-  { source: 'Instagram / QDM', visitors: 11240, optIns: 1672, conversionRate: 14.88 },
-  { source: 'Email', visitors: 7524, optIns: 928, conversionRate: 12.33 },
-  { source: 'Organic / SEO', visitors: 5420, optIns: 613, conversionRate: 11.31 },
-  { source: 'Affiliate / Partners', visitors: 2368, optIns: 286, conversionRate: 12.08 },
-];
-
-const totals = magnets.reduce(
-  (acc, item) => {
-    acc.visitors += item.visitors;
-    acc.optIns += item.optIns;
-    acc.newLeads += item.newLeads;
-    acc.revenue += item.revenue;
-    return acc;
-  },
-  { visitors: 0, optIns: 0, newLeads: 0, revenue: 0 },
-);
-
-const blendedConversion = (totals.optIns / totals.visitors) * 100;
-const bestMagnet = [...magnets].sort((a, b) => b.conversionRate - a.conversionRate)[0];
-const needsAttention = magnets.filter((item) => item.status === 'Needs attention');
 
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app root');
 
 app.innerHTML = `
   <main class="dashboard-shell">
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">Qazi Lead Magnet Command Center</p>
-        <h1>Performance dashboard for lead magnets.</h1>
-        <p class="lede">Internal view for tracking opt-ins, conversion rate, source quality, and revenue impact across active lead magnets.</p>
-      </div>
-      <div class="date-card" aria-label="Reporting window">
-        <span>Reporting window</span>
-        <strong>Last 30 days</strong>
-        <small>Mock data until live backend is connected</small>
+    <header class="hero">
+      <p class="eyebrow">Qazi Lead Magnet Monitor</p>
+      <h1>Keep tabs on the new lead magnet system.</h1>
+      <p class="lede">
+        This is the internal starting point: no fake stats, no customer-facing opt-in page.
+        The dashboard is ready for real data once the lead magnet backend/events are connected.
+      </p>
+      <div class="hero-actions">
+        <a class="primary-btn" href="#setup">Start wiring data</a>
+        <a class="secondary-btn" href="#inventory">View inventory shell</a>
       </div>
     </header>
 
-    <section class="metric-grid" aria-label="Key metrics">
-      ${metricCard('Total visitors', formatNumber(totals.visitors), '+5.8%', 'Traffic into lead magnet pages')}
-      ${metricCard('Opt-ins', formatNumber(totals.optIns), '+7.2%', 'New email captures')}
-      ${metricCard('Blended CVR', `${blendedConversion.toFixed(1)}%`, '+1.4%', 'Visitor → opt-in conversion')}
-      ${metricCard('Revenue influenced', formatCurrency(totals.revenue), '+9.6%', 'Downstream sales attribution')}
+    <section class="status-grid" aria-label="System status">
+      ${statusCard('Lead magnets tracked', 'Not connected', 'Waiting for inventory')}
+      ${statusCard('Opt-ins captured', 'Not connected', 'Waiting for form/event source')}
+      ${statusCard('Top source', 'Not connected', 'Waiting for source attribution')}
+      ${statusCard('Revenue impact', 'Not connected', 'Waiting for Hyros/checkout mapping')}
     </section>
 
-    <section class="two-column">
-      <article class="panel large-panel">
+    <section class="two-column" id="setup">
+      <article class="panel">
         <div class="panel-header">
           <div>
-            <p class="eyebrow small">Funnel health</p>
-            <h2>Visitor → opt-in performance</h2>
+            <p class="eyebrow small">Setup checklist</p>
+            <h2>What needs to be connected</h2>
           </div>
-          <span class="status-pill good">${bestMagnet.name} winning</span>
+          <span class="pill neutral">Starter shell</span>
         </div>
-        <div class="funnel">
-          ${funnelStep('Visitors', totals.visitors, 100)}
-          ${funnelStep('Opt-ins', totals.optIns, blendedConversion)}
-          ${funnelStep('New leads this week', totals.newLeads, (totals.newLeads / totals.optIns) * 100)}
+        <div class="checklist">
+          ${setupItems.map(setupRow).join('')}
         </div>
       </article>
 
       <article class="panel">
         <div class="panel-header compact">
           <div>
-            <p class="eyebrow small">Priority</p>
-            <h2>Needs attention</h2>
+            <p class="eyebrow small">Live truth</p>
+            <h2>No fake numbers</h2>
           </div>
         </div>
-        <div class="attention-list">
-          ${needsAttention
-            .map(
-              (item) => `
-                <div class="attention-item">
-                  <strong>${item.name}</strong>
-                  <span>${item.conversionRate.toFixed(1)}% CVR · ${item.trend.toFixed(1)}% trend</span>
-                  <p>Check source-message match, CTA clarity, and thank-you page routing.</p>
-                </div>
-              `,
-            )
-            .join('') || '<p class="muted">No lead magnets need attention.</p>'}
+        <div class="empty-state strong-empty">
+          <strong>Dashboard waiting for real events.</strong>
+          <p>
+            Once the lead magnet system starts sending real events, this page should show actual views,
+            opt-ins, conversion rate, source quality, and downstream revenue impact.
+          </p>
         </div>
       </article>
     </section>
 
-    <section class="two-column source-row">
-      <article class="panel">
-        <div class="panel-header compact">
-          <div>
-            <p class="eyebrow small">Source breakdown</p>
-            <h2>Where leads are coming from</h2>
-          </div>
-        </div>
-        <div class="source-list">
-          ${sources.map(sourceRow).join('')}
-        </div>
-      </article>
-
-      <article class="panel">
-        <div class="panel-header compact">
-          <div>
-            <p class="eyebrow small">Operator notes</p>
-            <h2>What this repo is for</h2>
-          </div>
-        </div>
-        <ul class="notes-list">
-          <li>Dashboard UI for internal lead magnet performance.</li>
-          <li>Designed to plug into Kit, QZD/go links, Hyros, or a backend API.</li>
-          <li>No customer-facing opt-in flow in this repo.</li>
-          <li>Current numbers are seeded placeholders for layout review only.</li>
-        </ul>
-      </article>
-    </section>
-
-    <section class="panel table-panel">
+    <section class="panel" id="inventory">
       <div class="panel-header">
         <div>
           <p class="eyebrow small">Lead magnet inventory</p>
-          <h2>Campaign performance table</h2>
+          <h2>Tracking shell</h2>
         </div>
-        <button class="ghost-btn" type="button">Export CSV</button>
+        <span class="pill warning">No lead magnets added yet</span>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Lead magnet</th>
-              <th>Product</th>
-              <th>Status</th>
-              <th>Visitors</th>
-              <th>Opt-ins</th>
-              <th>CVR</th>
-              <th>Top source</th>
-              <th>Revenue</th>
-              <th>Trend</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${magnets.map(tableRow).join('')}
-          </tbody>
-        </table>
+
+      <div class="inventory-shell">
+        <div class="inventory-row header-row">
+          <span>Lead magnet</span>
+          <span>Funnel URL</span>
+          <span>Opt-in source</span>
+          <span>Status</span>
+          <span>Notes</span>
+        </div>
+        <div class="inventory-row empty-row">
+          <span>Add first lead magnet</span>
+          <span>—</span>
+          <span>—</span>
+          <span><b>Waiting</b></span>
+          <span>Connect real funnel + backend events before showing metrics.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel roadmap-panel">
+      <div class="panel-header compact">
+        <div>
+          <p class="eyebrow small">Backend contract</p>
+          <h2>Minimum events this needs</h2>
+        </div>
+      </div>
+      <div class="event-grid">
+        ${eventCard('page_view', 'Lead magnet page loaded with source/UTM/referrer.')}
+        ${eventCard('opt_in', 'Email captured or confirmed by form/tag provider.')}
+        ${eventCard('thank_you_view', 'User reaches confirmation / delivery page.')}
+        ${eventCard('revenue_match', 'Lead later maps to Hyros/order/customer revenue.')}
       </div>
     </section>
   </main>
 `;
 
-function metricCard(label: string, value: string, trend: string, subcopy: string) {
+function statusCard(label: string, value: string, subcopy: string) {
   return `
-    <article class="metric-card">
+    <article class="status-card">
       <span>${label}</span>
       <strong>${value}</strong>
-      <div><b>${trend}</b> ${subcopy}</div>
+      <p>${subcopy}</p>
     </article>
   `;
 }
 
-function funnelStep(label: string, value: number, percent: number) {
+function setupRow(item: SetupItem) {
+  const className = item.status === 'Ready' ? 'good' : item.status === 'Next' ? 'warning' : 'neutral';
   return `
-    <div class="funnel-step">
-      <div class="funnel-copy">
-        <span>${label}</span>
-        <strong>${formatNumber(value)}</strong>
-      </div>
-      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(5, Math.min(100, percent))}%"></div></div>
-      <em>${percent.toFixed(1)}%</em>
-    </div>
-  `;
-}
-
-function sourceRow(item: SourceMetric) {
-  return `
-    <div class="source-item">
+    <div class="setup-row">
       <div>
-        <strong>${item.source}</strong>
-        <span>${formatNumber(item.visitors)} visitors · ${formatNumber(item.optIns)} opt-ins</span>
+        <strong>${item.label}</strong>
+        <p>${item.description}</p>
       </div>
-      <b>${item.conversionRate.toFixed(1)}%</b>
+      <span class="pill ${className}">${item.status}</span>
     </div>
   `;
 }
 
-function tableRow(item: MagnetMetric) {
-  const statusClass = item.status === 'Live' ? 'good' : item.status === 'Testing' ? 'testing' : 'warning';
-  const trendClass = item.trend >= 0 ? 'up' : 'down';
+function eventCard(name: string, description: string) {
   return `
-    <tr>
-      <td><strong>${item.name}</strong><span>${item.id}</span></td>
-      <td>${item.product}</td>
-      <td><span class="status-pill ${statusClass}">${item.status}</span></td>
-      <td>${formatNumber(item.visitors)}</td>
-      <td>${formatNumber(item.optIns)}</td>
-      <td>${item.conversionRate.toFixed(1)}%</td>
-      <td>${item.topSource}</td>
-      <td>${formatCurrency(item.revenue)}</td>
-      <td class="trend ${trendClass}">${item.trend >= 0 ? '+' : ''}${item.trend.toFixed(1)}%</td>
-    </tr>
+    <article class="event-card">
+      <code>${name}</code>
+      <p>${description}</p>
+    </article>
   `;
-}
-
-function formatNumber(value: number) {
-  return new Intl.NumberFormat('en-US').format(value);
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 }
